@@ -37,17 +37,17 @@ public class ImageModifier {
         // Create deep copy for modification
         BufferedImage modified = deepCopy(original);
         
-        // Get mode from system property
+        // HIER: Aus der System-Property (die zuvor in parseArguments gesetzt wurde)
         String mode = System.getProperty("interceptor.mode", "stealth");
         
         // Print interception header
         System.out.println("╔════════════════════════════════════════════════════╗");
         System.out.println("  SCREENSHOT INTERCEPTED #" + count);
         System.out.println("╠════════════════════════════════════════════════════╣");
-        System.out.println("  Mode: " + mode.toUpperCase());
+        System.out.println("  Mode: " + mode.toUpperCase()); // Zeigt: OVERLAY, REDACT, TIMESTAMP oder STEALTH
         System.out.println("  Original saved: " + backupFilename);
         
-        // Apply modification based on mode
+        // Anwendung des Modus
         switch (mode.toLowerCase()) {
             case "overlay":
                 modified = applyOverlay(modified);

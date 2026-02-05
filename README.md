@@ -261,34 +261,6 @@ java -version  # Should be 17+
 mvn -version   # Should be 3.6+
 ```
 
-## 🛡️ Defense Countermeasures
-
-If you're defending against this type of attack:
-
-1. **Cryptographic Signing at Capture**
-   - Sign screenshots in hardware/kernel space before they reach user space
-   - Use TPM or secure enclaves
-
-2. **Multiple Independent Validators**
-   - Have multiple agents capture simultaneously
-   - Compare hashes from different capture methods
-
-3. **Kernel-Level Monitoring**
-   - Detect Java agent usage
-   - Monitor for bytecode manipulation
-
-4. **Hardware-Based Capture**
-   - Use screen grabbers at the hardware level
-   - Bypass software entirely
-
-5. **Agent Whitelisting**
-   - Only allow approved Java agents
-   - Block runtime bytecode modification
-
-6. **Behavioral Analysis**
-   - Detect suspicious patterns (e.g., all screenshots look similar)
-   - Monitor for backup directories like `interceptor_originals/`
-
 ## 🏗️ Project Structure
 
 ```
@@ -319,37 +291,6 @@ ScreenLogInterceptor/
 | `interceptor.redact.regions` | Redact | Regions to black out | `x,y,w,h;x,y,w,h` |
 | `interceptor.fake.time` | Timestamp | Fake timestamp text | `2026-02-05 09:00:00` |
 
-## 🧪 Testing Checklist
-
-- [x] Build successfully with `mvn clean package`
-- [x] JAR has correct manifest entries
-- [x] Agent loads without errors
-- [x] Detects ScreenshotService class
-- [x] Transforms methods returning BufferedImage
-- [x] Saves originals to `interceptor_originals/`
-- [x] Stealth mode modifies 1 pixel invisibly
-- [x] Overlay mode applies images correctly
-- [x] Redact mode blacks out regions
-- [x] Timestamp mode draws fake times
-- [x] Modified images return to ScreenLog
-- [x] Blockchain validates successfully
-- [x] Console output matches specification
-
-## 📚 References
-
-- [Java Instrumentation API](https://docs.oracle.com/en/java/javase/17/docs/api/java.instrument/java/lang/instrument/Instrumentation.html)
-- [Javassist Documentation](https://www.javassist.org/)
-- [ScreenLog Project](https://github.com/htl-leonding-college/screenlog)
-
-## 👥 Contributing
-
-This is a research and educational project. Contributions that improve:
-- Documentation clarity
-- Code quality
-- Detection resistance (for research purposes)
-- Defense countermeasures
-
-...are welcome via pull requests.
 
 ## 📄 License
 
