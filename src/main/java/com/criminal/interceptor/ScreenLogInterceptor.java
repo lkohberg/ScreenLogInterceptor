@@ -108,7 +108,7 @@ public class ScreenLogInterceptor {
      */
     private static void printStartupBanner() {
         System.out.println();
-        System.out.println("═══════════════════���═══════════════════════════════");
+        System.out.println("═══════════════════════════════════════════════════");
         System.out.println("  SCREENLOG INTERCEPTOR LOADED");
         System.out.println("═══════════════════════════════════════════════════");
 
