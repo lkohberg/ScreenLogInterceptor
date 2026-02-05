@@ -4,6 +4,12 @@ target/
 !**/src/test/**/target/
 .kotlin
 
+### ScreenLog Interceptor ###
+interceptor_originals/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
