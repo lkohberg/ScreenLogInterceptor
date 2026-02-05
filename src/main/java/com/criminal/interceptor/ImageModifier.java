@@ -259,7 +259,7 @@ public class ImageModifier {
         int y = image.getHeight() - 30;
         
         // Draw semi-transparent black background
-        g.setColor(new Color(0, 0, 0, 180));
+        g.setColor(new Color(255, 255, 255, 180));
         g.fillRect(x - 5, y - textHeight + 5, textWidth + 10, textHeight + 5);
         
         // Draw white text
