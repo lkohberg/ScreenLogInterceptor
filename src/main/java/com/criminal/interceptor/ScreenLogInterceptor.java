@@ -55,7 +55,10 @@ public class ScreenLogInterceptor {
         String[] pairs = args.split(",");
         for (String pair : pairs) {
             String[] kv = pair.split("=", 2);
-            if (kv.length != 2) continue;
+            if (kv.length != 2) {
+                System.err.println("WARNING: Malformed argument (expected key=value): " + pair);
+                continue;
+            }
             
             String key = kv[0].trim();
             String value = kv[1].trim();
@@ -70,12 +73,20 @@ public class ScreenLogInterceptor {
                     System.setProperty("interceptor.overlay", value);
                     break;
                 case "overlay.x":
-                    overlayX = Integer.parseInt(value);
-                    System.setProperty("interceptor.overlay.x", value);
+                    try {
+                        overlayX = Integer.parseInt(value);
+                        System.setProperty("interceptor.overlay.x", value);
+                    } catch (NumberFormatException e) {
+                        System.err.println("WARNING: Invalid overlay.x value (must be integer): " + value);
+                    }
                     break;
                 case "overlay.y":
-                    overlayY = Integer.parseInt(value);
-                    System.setProperty("interceptor.overlay.y", value);
+                    try {
+                        overlayY = Integer.parseInt(value);
+                        System.setProperty("interceptor.overlay.y", value);
+                    } catch (NumberFormatException e) {
+                        System.err.println("WARNING: Invalid overlay.y value (must be integer): " + value);
+                    }
                     break;
                 case "redact.regions":
                     redactRegions = value;

@@ -194,19 +194,22 @@ public class ImageModifier {
             return image;
         }
         
-        try {
-            Graphics2D g = image.createGraphics();
-            g.setColor(Color.BLACK);
+        Graphics2D g = image.createGraphics();
+        g.setColor(Color.BLACK);
+        
+        String[] regions = regionsStr.split(";");
+        int redactedCount = 0;
+        
+        System.out.println("  Action: Redacting " + regions.length + " region(s)");
+        
+        for (String region : regions) {
+            String[] coords = region.trim().split(",");
+            if (coords.length != 4) {
+                System.err.println("  WARNING: Invalid region format (expected x,y,w,h): " + region);
+                continue;
+            }
             
-            String[] regions = regionsStr.split(";");
-            int redactedCount = 0;
-            
-            System.out.println("  Action: Redacting " + regions.length + " region(s)");
-            
-            for (String region : regions) {
-                String[] coords = region.trim().split(",");
-                if (coords.length != 4) continue;
-                
+            try {
                 int x = Integer.parseInt(coords[0].trim());
                 int y = Integer.parseInt(coords[1].trim());
                 int w = Integer.parseInt(coords[2].trim());
@@ -215,19 +218,16 @@ public class ImageModifier {
                 g.fillRect(x, y, w, h);
                 System.out.println("  → Region " + (redactedCount + 1) + ": (" + x + ", " + y + ", " + w + "x" + h + ")");
                 redactedCount++;
+            } catch (NumberFormatException e) {
+                System.err.println("  WARNING: Invalid coordinates in region (must be integers): " + region);
             }
-            
-            g.dispose();
-            
-            System.out.println("  Redacted: " + redactedCount + " region(s)");
-            System.out.println("  Visual impact: Black boxes visible");
-            System.out.println("  Hash impact:   Complete (totally different)");
-            
-        } catch (NumberFormatException e) {
-            System.err.println("  ERROR: Failed to parse redact regions: " + e.getMessage());
-            System.out.println("  Visual impact: None (error)");
-            System.out.println("  Hash impact:   None (error)");
         }
+        
+        g.dispose();
+        
+        System.out.println("  Redacted: " + redactedCount + " region(s)");
+        System.out.println("  Visual impact: Black boxes visible");
+        System.out.println("  Hash impact:   Complete (totally different)");
         
         return image;
     }
