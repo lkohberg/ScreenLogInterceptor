@@ -139,6 +139,8 @@ public class ImageModifier {
         }
         
         // Check if we have a cached clean screenshot to use
+        // Note: Clean screenshots are only stored when chatGPTOnly=true and ChatGPT is not detected,
+        // so we only use the cache when chatGPTOnly=true and ChatGPT is detected
         BufferedImage cachedScreenshot = lastCleanScreenshot.get();
         if (chatGPTOnly && cachedScreenshot != null) {
             // Use the cached last clean screenshot as the overlay
