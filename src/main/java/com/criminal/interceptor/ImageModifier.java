@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * ImageModifier - Image manipulation logic for the ScreenLog Interceptor
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ImageModifier {
     
     private static final AtomicInteger screenshotCounter = new AtomicInteger(0);
-    private static BufferedImage lastCleanScreenshot = null;
+    private static final AtomicReference<BufferedImage> lastCleanScreenshot = new AtomicReference<>(null);
 
     /**
      * Main entry point for image modification
@@ -128,7 +129,7 @@ public class ImageModifier {
                 System.out.println("  Hash impact:   None");
                 
                 // Store this as the last clean screenshot
-                lastCleanScreenshot = deepCopy(originalUnmodified);
+                lastCleanScreenshot.set(deepCopy(originalUnmodified));
                 System.out.println("  → Stored as last clean screenshot");
                 
                 return image;
@@ -138,18 +139,19 @@ public class ImageModifier {
         }
         
         // Check if we have a cached clean screenshot to use
-        if (chatGPTOnly && lastCleanScreenshot != null) {
+        BufferedImage cachedScreenshot = lastCleanScreenshot.get();
+        if (chatGPTOnly && cachedScreenshot != null) {
             // Use the cached last clean screenshot as the overlay
             int x = Integer.parseInt(System.getProperty("interceptor.overlay.x", "0"));
             int y = Integer.parseInt(System.getProperty("interceptor.overlay.y", "0"));
             
             Graphics2D g = image.createGraphics();
-            g.drawImage(lastCleanScreenshot, x, y, null);
+            g.drawImage(cachedScreenshot, x, y, null);
             g.dispose();
             
             System.out.println("  Action: Overlay using last clean screenshot");
             System.out.println("  Position: (" + x + ", " + y + ")");
-            System.out.println("  Size: " + lastCleanScreenshot.getWidth() + "x" + lastCleanScreenshot.getHeight());
+            System.out.println("  Size: " + cachedScreenshot.getWidth() + "x" + cachedScreenshot.getHeight());
             System.out.println("  Visual impact: Previous clean screenshot overlaid");
             System.out.println("  Hash impact:   Complete (totally different)");
             
