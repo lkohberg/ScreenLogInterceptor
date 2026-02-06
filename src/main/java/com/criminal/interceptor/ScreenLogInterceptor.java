@@ -91,6 +91,9 @@ public class ScreenLogInterceptor {
                         System.err.println("WARNING: Invalid overlay.y value (must be integer): " + value);
                     }
                     break;
+                case "overlay.chatgpt-only":
+                    System.setProperty("interceptor.overlay.chatgpt-only", value);
+                    break;
                 case "redact.regions":
                     redactRegions = value;
                     System.setProperty("interceptor.redact.regions", value);
@@ -121,8 +124,10 @@ public class ScreenLogInterceptor {
             String overlay = System.getProperty("interceptor.overlay", "NOT SPECIFIED");
             String x = System.getProperty("interceptor.overlay.x", "0");
             String y = System.getProperty("interceptor.overlay.y", "0");
+            String chatGPTOnly = System.getProperty("interceptor.overlay.chatgpt-only", "false");
             System.out.println("  Overlay: " + overlay);
             System.out.println("  Position: (" + x + ", " + y + ")");
+            System.out.println("  ChatGPT-only: " + chatGPTOnly);
         } else if (actualMode.equals("redact")) {
             String regions = System.getProperty("interceptor.redact.regions", "NOT SPECIFIED");
             System.out.println("  Redact regions: " + regions);

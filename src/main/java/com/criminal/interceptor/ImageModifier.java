@@ -145,6 +145,24 @@ public class ImageModifier {
      * Apply overlay image on top of screenshot
      */
     private static BufferedImage applyOverlay(BufferedImage image) {
+        // Check if overlay should only be applied when ChatGPT window is open
+        boolean chatGPTOnly = Boolean.parseBoolean(
+            System.getProperty("interceptor.overlay.chatgpt-only", "false")
+        );
+        
+        if (chatGPTOnly) {
+            boolean isChatGPTOpen = WindowDetector.isChatGPTWindowOpen();
+            
+            if (!isChatGPTOpen) {
+                System.out.println("  Action: Overlay (skipped - ChatGPT window not detected)");
+                System.out.println("  Visual impact: None");
+                System.out.println("  Hash impact:   None");
+                return image;
+            }
+            
+            System.out.println("  ChatGPT window detected: YES");
+        }
+        
         String overlayPath = System.getProperty("interceptor.overlay");
         
         if (overlayPath == null || overlayPath.trim().isEmpty()) {

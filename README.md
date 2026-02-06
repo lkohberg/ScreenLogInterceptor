@@ -131,10 +131,28 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
      -jar screenlog-1.0.0.jar
 ```
 
+**ChatGPT Window Detection:**
+
+You can configure the overlay to only be applied when a ChatGPT window is currently open:
+
+```bash
+java -javaagent:target/screenlog-interceptor-1.0.0.jar \
+     -Dinterceptor.mode=overlay \
+     -Dinterceptor.overlay=/path/to/fake_window.png \
+     -Dinterceptor.overlay.x=100 \
+     -Dinterceptor.overlay.y=100 \
+     -Dinterceptor.overlay.chatgpt-only=true \
+     -jar screenlog-1.0.0.jar
+```
+
+When `chatgpt-only=true`, the overlay will only be applied if a window with "ChatGPT" or "OpenAI" in the title is detected. This works across Windows, macOS, and Linux platforms.
+
 **Use Cases:**
 - Cover sensitive information with fake content
 - Add fake windows or applications
 - Replace real screen content
+- Conditionally modify screenshots only when specific applications are open
+
 
 ### 3. Redact Mode
 
@@ -272,7 +290,8 @@ ScreenLogInterceptor/
 │               └── criminal/
 │                   └── interceptor/
 │                       ├── ScreenLogInterceptor.java  # Main agent entry point
-│                       └── ImageModifier.java         # Image manipulation logic
+│                       ├── ImageModifier.java         # Image manipulation logic
+│                       └── WindowDetector.java        # Window detection utility
 ├── interceptor_originals/          # Created at runtime (gitignored)
 │   └── original_*.png              # Backup of real screenshots
 ├── pom.xml                         # Maven build configuration
@@ -288,6 +307,7 @@ ScreenLogInterceptor/
 | `interceptor.overlay` | Overlay | Path to overlay image | `/path/to/image.png` |
 | `interceptor.overlay.x` | Overlay | X coordinate for overlay | `100` |
 | `interceptor.overlay.y` | Overlay | Y coordinate for overlay | `100` |
+| `interceptor.overlay.chatgpt-only` | Overlay | Only overlay when ChatGPT window is open | `true`, `false` (default) |
 | `interceptor.redact.regions` | Redact | Regions to black out | `x,y,w,h;x,y,w,h` |
 | `interceptor.fake.time` | Timestamp | Fake timestamp text | `2026-02-05 09:00:00` |
 
