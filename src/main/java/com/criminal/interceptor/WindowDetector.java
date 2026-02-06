@@ -108,13 +108,12 @@ public class WindowDetector {
         
         try {
             // Use AppleScript to get window titles
-            String[] cmd = {
+            ProcessBuilder pb = new ProcessBuilder(
                 "osascript",
                 "-e",
                 "tell application \"System Events\" to get name of every window of every process"
-            };
-            
-            Process process = Runtime.getRuntime().exec(cmd);
+            );
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             
             String line;
@@ -142,13 +141,13 @@ public class WindowDetector {
     private static List<String> getWindowTitlesLinux() {
         List<String> titles = new ArrayList<>();
         
-        // Try wmctrl first
-        if (tryLinuxCommand(new String[]{"wmctrl", "-l"}, titles)) {
+        // Try wmctrl first (more efficient)
+        if (tryLinuxCommandWmctrl(titles)) {
             return titles;
         }
         
-        // Try xdotool as fallback
-        if (tryLinuxCommand(new String[]{"xdotool", "search", "--onlyvisible", "--name", ".*"}, titles)) {
+        // Try xdotool as fallback (batch mode for efficiency)
+        if (tryLinuxCommandXdotool(titles)) {
             return titles;
         }
         
@@ -157,45 +156,59 @@ public class WindowDetector {
     }
     
     /**
-     * Try to execute a Linux command to get window titles
+     * Try wmctrl command to get window titles
      */
-    private static boolean tryLinuxCommand(String[] cmd, List<String> titles) {
+    private static boolean tryLinuxCommandWmctrl(List<String> titles) {
         try {
-            Process process = Runtime.getRuntime().exec(cmd);
+            ProcessBuilder pb = new ProcessBuilder("wmctrl", "-l");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             
             String line;
             while ((line = reader.readLine()) != null) {
-                // wmctrl format: "0x... desktop ... title"
-                // xdotool returns window IDs, need to get titles separately
-                if (cmd[0].equals("wmctrl")) {
-                    String[] parts = line.split("\\s+", 4);
-                    if (parts.length >= 4) {
-                        titles.add(parts[3]);
-                    }
-                } else if (cmd[0].equals("xdotool")) {
-                    // Get window title for each window ID
-                    String windowId = line.trim();
-                    try {
-                        Process titleProcess = Runtime.getRuntime().exec(
-                            new String[]{"xdotool", "getwindowname", windowId}
-                        );
-                        BufferedReader titleReader = new BufferedReader(
-                            new InputStreamReader(titleProcess.getInputStream())
-                        );
-                        String title = titleReader.readLine();
-                        if (title != null && !title.trim().isEmpty()) {
-                            titles.add(title);
-                        }
-                        titleProcess.waitFor();
-                    } catch (Exception e) {
-                        // Skip this window
-                    }
+                // wmctrl format: "0x... desktop hostname title"
+                String[] parts = line.split("\\s+", 4);
+                if (parts.length >= 4) {
+                    titles.add(parts[3]);
                 }
             }
             
             int exitCode = process.waitFor();
             return exitCode == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Try xdotool command to get window titles (optimized batch mode)
+     */
+    private static boolean tryLinuxCommandXdotool(List<String> titles) {
+        try {
+            // Use xdotool to search for all visible windows and get their names in one go
+            // Format: xdotool search --onlyvisible --name "" getwindowname %@
+            ProcessBuilder pb = new ProcessBuilder(
+                "bash", "-c", 
+                "xdotool search --onlyvisible --name '.*' 2>/dev/null | xargs -I {} xdotool getwindowname {}"
+            );
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    titles.add(line.trim());
+                }
+            }
+            
+            // Consume error stream to prevent blocking
+            while (errorReader.readLine() != null) {
+                // Ignore errors
+            }
+            
+            int exitCode = process.waitFor();
+            return exitCode == 0 && !titles.isEmpty();
         } catch (Exception e) {
             return false;
         }
