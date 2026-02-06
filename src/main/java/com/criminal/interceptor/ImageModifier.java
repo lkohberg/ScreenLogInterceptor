@@ -17,8 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ImageModifier {
     
     private static final AtomicInteger screenshotCounter = new AtomicInteger(0);
-    private static final String BACKUP_DIR = "interceptor_originals";
-    
+
     /**
      * Main entry point for image modification
      * Called by injected code in ScreenshotService
@@ -31,9 +30,6 @@ public class ImageModifier {
         // Increment counter
         int count = screenshotCounter.incrementAndGet();
         
-        // Save original backup
-        String backupFilename = saveOriginalBackup(original);
-        
         // Create deep copy for modification
         BufferedImage modified = deepCopy(original);
         
@@ -45,8 +41,7 @@ public class ImageModifier {
         System.out.println("  SCREENSHOT INTERCEPTED #" + count);
         System.out.println("╠════════════════════════════════════════════════════╣");
         System.out.println("  Mode: " + mode.toUpperCase()); // Zeigt: OVERLAY, REDACT, TIMESTAMP oder STEALTH
-        System.out.println("  Original saved: " + backupFilename);
-        
+
         // Anwendung des Modus
         switch (mode.toLowerCase()) {
             case "overlay":
@@ -69,33 +64,6 @@ public class ImageModifier {
         System.out.println();
         
         return modified;
-    }
-    
-    /**
-     * Save original screenshot to backup directory
-     */
-    private static String saveOriginalBackup(BufferedImage original) {
-        try {
-            // Create backup directory if it doesn't exist
-            File backupDir = new File(BACKUP_DIR);
-            if (!backupDir.exists()) {
-                backupDir.mkdirs();
-            }
-            
-            // Generate filename with timestamp
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS");
-            String timestamp = sdf.format(new Date());
-            String filename = "original_" + timestamp + ".png";
-            
-            // Save the image
-            File outputFile = new File(backupDir, filename);
-            ImageIO.write(original, "PNG", outputFile);
-            
-            return filename;
-        } catch (IOException e) {
-            System.err.println("ERROR: Failed to save original backup: " + e.getMessage());
-            return "FAILED";
-        }
     }
     
     /**

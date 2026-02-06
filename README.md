@@ -41,11 +41,6 @@ Interceptor Attack:
 │ Screenshot  │ -> │ INTERCEPT │ -> │   Hash   │ -> │ Blockchain │
 │   Capture   │    │  & MODIFY │    │ Calculate│    │   Storage  │
 └─────────────┘    └───────────┘    └──────────┘    └────────────┘
-                         ↓
-                   ┌───────────┐
-                   │  Backup   │
-                   │ Originals │
-                   └───────────┘
 ```
 
 The blockchain validates perfectly because it's hashing the **already-modified** screenshots!
@@ -55,6 +50,7 @@ The blockchain validates perfectly because it's hashing the **already-modified**
 - Java 17 or higher
 - Maven 3.6 or higher
 - ScreenLog application (target application)
+- **Linux only**: `wmctrl` or `xdotool` (for ChatGPT window detection)
 
 ## 🚀 Installation
 
@@ -79,6 +75,31 @@ The build process:
   - `Premain-Class: com.criminal.interceptor.ScreenLogInterceptor`
   - `Can-Redefine-Classes: true`
   - `Can-Retransform-Classes: true`
+
+### Linux Setup (Optional)
+
+For ChatGPT window detection on Linux, install one of these tools:
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install wmctrl
+# or
+sudo apt-get install xdotool
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install wmctrl
+# or
+sudo dnf install xdotool
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S wmctrl
+# or
+sudo pacman -S xdotool
+```
 
 ## 📖 Usage
 
@@ -107,7 +128,6 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
   SCREENSHOT INTERCEPTED #1
 ╠════════════════════════════════════════════════════╣
   Mode: STEALTH
-  Original saved: original_2026-02-05_14-23-15-456.png
   Action: Stealth modification (1 pixel)
   Location: (1919, 1079)
   Original RGB:  0xff1a1a1a
@@ -122,6 +142,8 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
 
 Places another image on top of the screenshot at specified coordinates.
 
+#### Basic Overlay (Always Applied)
+
 ```bash
 java -javaagent:target/screenlog-interceptor-1.0.0.jar \
      -Dinterceptor.mode=overlay \
@@ -131,7 +153,7 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
      -jar screenlog-1.0.0.jar
 ```
 
-**ChatGPT Window Detection:**
+#### Conditional Overlay (ChatGPT Window Detection)
 
 You can configure the overlay to only be applied when a ChatGPT window is currently open:
 
@@ -145,13 +167,27 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
      -jar screenlog-1.0.0.jar
 ```
 
-When `chatgpt-only=true`, the overlay will only be applied if a window with "ChatGPT" or "OpenAI" in the title is detected. This works across Windows, macOS, and Linux platforms.
+**How ChatGPT Detection Works:**
+
+When `chatgpt-only=true`, the interceptor will:
+1. Check if any window with "ChatGPT" or "OpenAI" in the title is currently open
+2. Only apply the overlay if such a window is detected
+3. Skip the overlay if no ChatGPT window is found
+
+**Platform Support:**
+- **Windows**: Uses JNA to enumerate windows via Win32 API
+- **macOS**: Uses AppleScript to query System Events
+- **Linux**: Uses `wmctrl` or `xdotool` command-line tools (must be installed)
+
+**Detection Behavior:**
+- If detection fails (e.g., missing tools), defaults to "fail open" (allows overlay)
+- Window must be visible (not minimized)
+- Works across all major operating systems
 
 **Use Cases:**
-- Cover sensitive information with fake content
-- Add fake windows or applications
-- Replace real screen content
-- Conditionally modify screenshots only when specific applications are open
+- Cover sensitive information with fake content only when needed
+- Add fake windows or applications conditionally
+- Replace real screen content selectively based on context
 
 
 ### 3. Redact Mode
@@ -224,16 +260,41 @@ When ScreenLog captures a screenshot:
 1. Original method executes normally
 2. Injected code intercepts the return value
 3. `ImageModifier.modify()` is called
-4. Original screenshot is saved to `interceptor_originals/`
-5. Modified screenshot is returned
-6. ScreenLog hashes the **modified** screenshot
-7. Modified screenshot + hash goes into blockchain
+4. Modified screenshot is returned
+5. ScreenLog hashes the **modified** screenshot
+6. Modified screenshot + hash goes into blockchain
 
-### 4. File Output
+### 4. Window Detection (Overlay Mode)
 
-Original screenshots are saved to: `interceptor_originals/original_YYYY-MM-DD_HH-mm-ss-SSS.png`
+When `chatgpt-only=true` is enabled:
 
-This creates a backup of the real screenshots for comparison.
+**Windows:**
+- Uses JNA (Java Native Access) to call Win32 API
+- Enumerates all windows via `EnumWindows`
+- Checks window titles for "ChatGPT" or "OpenAI"
+
+**macOS:**
+- Executes AppleScript via `osascript`
+- Queries System Events for window titles
+- Searches for "ChatGPT" or "OpenAI" in titles
+
+**Linux:**
+- Tries `wmctrl -l` first (lists all windows)
+- Falls back to `xdotool search --name` if wmctrl unavailable
+- Searches for "ChatGPT" or "OpenAI" in window titles
+
+## 🧪 Testing Window Detection
+
+Test the ChatGPT window detection without running ScreenLog:
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.criminal.interceptor.WindowDetectorTest"
+```
+
+This will show:
+- Your operating system
+- Whether a ChatGPT window is currently detected
+- Instructions on how to test the feature
 
 ## 🐛 Troubleshooting
 
@@ -265,6 +326,14 @@ This creates a backup of the real screenshots for comparison.
 - Check console output for errors
 - For overlay mode, verify image file exists and path is correct
 
+### ChatGPT Window Not Detected
+
+**Solutions:**
+- Ensure ChatGPT window is actually open and visible (not minimized)
+- Check window title contains "ChatGPT" or "OpenAI"
+- On Linux: Install `wmctrl` or `xdotool`
+- Run the window detection test (see Testing section above)
+
 ### Build Failures
 
 ```bash
@@ -292,8 +361,6 @@ ScreenLogInterceptor/
 │                       ├── ScreenLogInterceptor.java  # Main agent entry point
 │                       ├── ImageModifier.java         # Image manipulation logic
 │                       └── WindowDetector.java        # Window detection utility
-├── interceptor_originals/          # Created at runtime (gitignored)
-│   └── original_*.png              # Backup of real screenshots
 ├── pom.xml                         # Maven build configuration
 ├── .gitignore                      # Excludes build artifacts
 └── README.md                       # This file
