@@ -39,9 +39,9 @@ public class ImageModifier {
         String mode = System.getProperty("interceptor.mode", "stealth");
         
         // Print interception header
-        System.out.println("╔════════════════════════════════════════════════════╗");
+        System.out.println("=============================================");
         System.out.println("  SCREENSHOT INTERCEPTED #" + count);
-        System.out.println("╠════════════════════════════════════════════════════╣");
+        System.out.println("=============================================");
         System.out.println("  Mode: " + mode.toUpperCase()); // Zeigt: OVERLAY, REDACT, TIMESTAMP oder STEALTH
 
         // Anwendung des Modus
@@ -62,7 +62,7 @@ public class ImageModifier {
         }
         
         System.out.println("  Status: ✓ MODIFICATION COMPLETE");
-        System.out.println("╚════════════════════════════════════════════════════╝");
+        System.out.println("=============================================");
         System.out.println();
         
         return modified;

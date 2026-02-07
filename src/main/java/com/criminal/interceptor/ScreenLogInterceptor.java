@@ -42,8 +42,7 @@ public class ScreenLogInterceptor {
         inst.addTransformer(new ScreenshotTransformer());
 
         System.out.println("  Transformer registered for: at/htl/screenlog/service/ScreenshotService");
-        System.out.println("═══════════════════════════════════════════════════");
-        System.out.println();
+        System.out.println("=============================================");
     }
 
     /**
@@ -111,9 +110,9 @@ public class ScreenLogInterceptor {
      */
     private static void printStartupBanner() {
         System.out.println();
-        System.out.println("═══════════════════════════════════════════════════");
+        System.out.println("=============================================");
         System.out.println("  SCREENLOG INTERCEPTOR LOADED");
-        System.out.println("═══════════════════════════════════════════════════");
+        System.out.println("=============================================");
 
         // Read mode from system properties (same as ImageModifier does)
         String actualMode = System.getProperty("interceptor.mode", "stealth");
@@ -140,7 +139,7 @@ public class ScreenLogInterceptor {
         System.out.println("  Backup dir: " + backupDir);
 
         System.out.println("  Status: READY TO INTERCEPT");
-        System.out.println("═══════════════════════════════════════════════════");
+        System.out.println("=============================================");
     }
 
     /**
@@ -162,9 +161,9 @@ public class ScreenLogInterceptor {
             }
 
             try {
-                System.out.println("╔════════════════════════════════════════════════════╗");
+                System.out.println("=============================================");
                 System.out.println("  TRANSFORMING CLASS: " + className);
-                System.out.println("╚════════════════════════════════════════════════════╝");
+                System.out.println("=============================================");;
 
                 ClassPool pool = ClassPool.getDefault();
                 CtClass ctClass = pool.get("at.htl.screenlog.service.ScreenshotService");
