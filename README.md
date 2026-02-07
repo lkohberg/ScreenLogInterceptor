@@ -199,6 +199,18 @@ When `ai-detection=true`, the interceptor will:
 - Add fake windows or applications conditionally
 - Replace real screen content selectively based on context
 
+**Advanced Feature: Clean Screenshot Caching**
+
+When AI detection is enabled (`ai-detection=true`), the interceptor implements intelligent screenshot caching:
+
+1. **When NO AI assistant is detected**: The interceptor stores the screenshot as a "clean" screenshot cache and skips the overlay
+2. **When an AI assistant IS detected**: 
+   - If a clean screenshot cache exists, it uses that cached screenshot as the overlay (instead of the file)
+   - If no cache exists, it falls back to the overlay file (if specified)
+   - If neither exists, no overlay is applied
+
+This creates a seamless effect where the screen appears unchanged even when an AI assistant is opened, by overlaying the previous clean state over the current AI-visible state.
+
 **Expected Output (When AI Assistant Detected):**
 ```
 =============================================
@@ -412,9 +424,10 @@ ScreenLogInterceptor/
 │           └── com/
 │               └── criminal/
 │                   └── interceptor/
-│                       ├── ScreenLogInterceptor.java  # Main agent entry point
-│                       ├── ImageModifier.java         # Image manipulation logic
-│                       └── WindowDetector.java        # Window detection utility
+│                       ├── ScreenLogInterceptor.java     # Main agent entry point
+│                       ├── ImageModifier.java            # Image manipulation logic
+│                       ├── WindowDetector.java           # Window detection utility
+│                       └── WindowDetectorTest.java       # Window detection test tool
 ├── pom.xml                         # Maven build configuration
 ├── .gitignore                      # Excludes build artifacts
 └── README.md                       # This file
