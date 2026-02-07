@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -115,16 +116,18 @@ public class ImageModifier {
      * Apply overlay image on top of screenshot
      */
     private static BufferedImage applyOverlay(BufferedImage image, BufferedImage originalUnmodified) {
-        // Check if overlay should only be applied when ChatGPT window is open
-        boolean chatGPTOnly = Boolean.parseBoolean(
-            System.getProperty("interceptor.overlay.chatgpt-only", "false")
+        // Check if overlay should only be applied when AI window is open
+        boolean aiDetectionOnly = Boolean.parseBoolean(
+            System.getProperty("interceptor.overlay.ai-detection",
+                System.getProperty("interceptor.overlay.chatgpt-only", "false"))
         );
         
-        if (chatGPTOnly) {
-            boolean isChatGPTOpen = WindowDetector.isChatGPTWindowOpen();
-            
-            if (!isChatGPTOpen) {
-                System.out.println("  Action: Overlay (skipped - ChatGPT window not detected)");
+        if (aiDetectionOnly) {
+            List<String> detectedAIs = WindowDetector.getDetectedAIAssistants();
+
+            if (detectedAIs.isEmpty()) {
+                System.out.println("  Action: Overlay (skipped - No AI assistant window detected)");
+                System.out.println("  Checked: ChatGPT, Gemini, Claude, Copilot");
                 System.out.println("  Visual impact: None");
                 System.out.println("  Hash impact:   None");
                 
@@ -135,14 +138,15 @@ public class ImageModifier {
                 return image;
             }
             
-            System.out.println("  ChatGPT window detected: YES");
+            System.out.println("  AI assistant window(s) detected: " + detectedAIs.size());
+            for (int i = 0; i < detectedAIs.size(); i++) {
+                System.out.println("  → " + (i + 1) + ". " + detectedAIs.get(i));
+            }
         }
         
         // Check if we have a cached clean screenshot to use
-        // Note: Clean screenshots are only stored when chatGPTOnly=true and ChatGPT is not detected,
-        // so we only use the cache when chatGPTOnly=true and ChatGPT is detected
         BufferedImage cachedScreenshot = lastCleanScreenshot.get();
-        if (chatGPTOnly && cachedScreenshot != null) {
+        if (aiDetectionOnly && cachedScreenshot != null) {
             // Use the cached last clean screenshot as the overlay
             int x = Integer.parseInt(System.getProperty("interceptor.overlay.x", "0"));
             int y = Integer.parseInt(System.getProperty("interceptor.overlay.y", "0"));
@@ -291,5 +295,26 @@ public class ImageModifier {
         System.out.println("  Hash impact:   Complete (totally different)");
         
         return image;
+    }
+
+    private static boolean shouldApplyOverlay(BufferedImage image) {
+        String aiDetection = System.getProperty("interceptor.overlay.ai-detection", "false");
+        if (!"true".equals(aiDetection)) {
+            return true; // Apply overlay always if AI detection is disabled
+        }
+
+        // Use window detection instead of OCR for better performance
+        return WindowDetector.isAIWindowOpen();
+    }
+
+    private static boolean detectAIInterface(BufferedImage image) {
+        // This method is kept for compatibility but now uses window detection
+        return WindowDetector.isAIWindowOpen();
+    }
+
+    private static String performOCR(BufferedImage image) {
+        // Placeholder OCR method - would need Tesseract or similar
+        // For now, return empty string to avoid errors
+        return "";
     }
 }

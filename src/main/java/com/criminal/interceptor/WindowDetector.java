@@ -23,48 +23,118 @@ public class WindowDetector {
     private static final boolean IS_MAC = OS_NAME.contains("mac");
     private static final boolean IS_LINUX = OS_NAME.contains("linux");
 
+    // Extended User32 interface with IsIconic method
+    public interface ExtendedUser32 extends User32 {
+        ExtendedUser32 INSTANCE = Native.load("user32", ExtendedUser32.class);
+        boolean IsIconic(WinDef.HWND hWnd);
+    }
+
     /**
-     * Check if a ChatGPT window is currently open
+     * Check if any AI assistant window is currently open AND visible
      *
-     * @return true if a ChatGPT window is detected, false otherwise
+     * @return true if any AI assistant window is detected and visible, false otherwise
      */
-    public static boolean isChatGPTWindowOpen() {
+    public static boolean isAIWindowOpen() {
         try {
-            List<String> windowTitles = getOpenWindowTitles();
-
-            // Check for ChatGPT-related window titles
-            for (String title : windowTitles) {
-                String lowerTitle = title.toLowerCase();
-
-                // Check for various ChatGPT window patterns
-                if (lowerTitle.contains("chatgpt") ||
-                        lowerTitle.contains("chat gpt") ||
-                        lowerTitle.contains("openai") ||
-                        (lowerTitle.contains("chat") && lowerTitle.contains("openai"))) {
-                    return true;
-                }
-            }
-
-            return false;
+            List<String> detectedAIs = getDetectedAIAssistants();
+            return !detectedAIs.isEmpty();
         } catch (Exception e) {
-            System.err.println("WARNING: Failed to detect ChatGPT window: " + e.getMessage());
+            System.err.println("WARNING: Failed to detect AI assistant window: " + e.getMessage());
             // If detection fails, default to allowing overlay (fail open)
             return true;
         }
     }
 
     /**
-     * Get all open window titles
+     * Get list of detected AI assistants with their window titles
      *
-     * @return List of window titles
+     * @return List of detected AI assistant names
      */
-    private static List<String> getOpenWindowTitles() {
+    public static List<String> getDetectedAIAssistants() {
+        List<String> detectedAIs = new ArrayList<>();
+
+        try {
+            List<WindowInfo> visibleWindows = getVisibleWindowTitles();
+
+            // Check for AI assistant-related window titles
+            for (WindowInfo windowInfo : visibleWindows) {
+                String lowerTitle = windowInfo.title.toLowerCase();
+
+                // ChatGPT / OpenAI
+                if (lowerTitle.contains("chatgpt") ||
+                        lowerTitle.contains("chat gpt") ||
+                        lowerTitle.contains("openai") ||
+                        (lowerTitle.contains("chat") && lowerTitle.contains("openai"))) {
+                    detectedAIs.add("ChatGPT (" + windowInfo.title + ")");
+                    continue;
+                }
+
+                // Google Gemini / Bard
+                if (lowerTitle.contains("gemini") ||
+                        lowerTitle.contains("bard") ||
+                        lowerTitle.contains("google ai")) {
+                    detectedAIs.add("Gemini (" + windowInfo.title + ")");
+                    continue;
+                }
+
+                // Anthropic Claude
+                if (lowerTitle.contains("claude") ||
+                        lowerTitle.contains("anthropic")) {
+                    detectedAIs.add("Claude (" + windowInfo.title + ")");
+                    continue;
+                }
+
+                // Microsoft Copilot / GitHub Copilot
+                if (lowerTitle.contains("copilot") ||
+                        lowerTitle.contains("github copilot") ||
+                        lowerTitle.contains("microsoft copilot")) {
+                    detectedAIs.add("Copilot (" + windowInfo.title + ")");
+                    continue;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("WARNING: Failed to detect AI assistant windows: " + e.getMessage());
+        }
+
+        return detectedAIs;
+    }
+
+    /**
+     * Check if a ChatGPT window is currently open
+     * @deprecated Use isAIWindowOpen() for broader AI detection
+     */
+    @Deprecated
+    public static boolean isChatGPTWindowOpen() {
+        return isAIWindowOpen();
+    }
+
+    /**
+     * Window information container
+     */
+    private static class WindowInfo {
+        String title;
+        boolean isVisible;
+        boolean isMinimized;
+
+        WindowInfo(String title, boolean isVisible, boolean isMinimized) {
+            this.title = title;
+            this.isVisible = isVisible;
+            this.isMinimized = isMinimized;
+        }
+    }
+
+    /**
+     * Get all visible (non-minimized) window titles
+     *
+     * @return List of visible window information
+     */
+    private static List<WindowInfo> getVisibleWindowTitles() {
         if (IS_WINDOWS) {
-            return getWindowTitlesWindows();
+            return getVisibleWindowTitlesWindows();
         } else if (IS_MAC) {
-            return getWindowTitlesMac();
+            return getVisibleWindowTitlesMac();
         } else if (IS_LINUX) {
-            return getWindowTitlesLinux();
+            return getVisibleWindowTitlesLinux();
         } else {
             System.err.println("WARNING: Unsupported OS for window detection: " + OS_NAME);
             return new ArrayList<>();
@@ -72,24 +142,26 @@ public class WindowDetector {
     }
 
     /**
-     * Get window titles on Windows using JNA
+     * Get visible window titles on Windows using JNA with minimization check
      */
-    private static List<String> getWindowTitlesWindows() {
-        List<String> titles = new ArrayList<>();
+    private static List<WindowInfo> getVisibleWindowTitlesWindows() {
+        List<WindowInfo> windows = new ArrayList<>();
 
         try {
             User32 user32 = User32.INSTANCE;
+            ExtendedUser32 extUser32 = ExtendedUser32.INSTANCE;
 
             user32.EnumWindows(new WinUser.WNDENUMPROC() {
                 @Override
                 public boolean callback(WinDef.HWND hWnd, Pointer data) {
-                    if (user32.IsWindowVisible(hWnd)) {
+                    // Check if window is visible and not minimized (using our extended interface)
+                    if (user32.IsWindowVisible(hWnd) && !extUser32.IsIconic(hWnd)) {
                         char[] buffer = new char[1024];
                         user32.GetWindowText(hWnd, buffer, buffer.length);
                         String title = Native.toString(buffer);
 
                         if (title != null && !title.trim().isEmpty()) {
-                            titles.add(title);
+                            windows.add(new WindowInfo(title, true, false));
                         }
                     }
                     return true;
@@ -97,23 +169,57 @@ public class WindowDetector {
             }, null);
         } catch (Exception e) {
             System.err.println("WARNING: Failed to enumerate Windows windows: " + e.getMessage());
+            // Fallback: use basic visibility check only
+            return getBasicVisibleWindowsWindows();
         }
 
-        return titles;
+        return windows;
     }
 
     /**
-     * Get window titles on macOS using AppleScript
+     * Fallback method for Windows without IsIconic check
      */
-    private static List<String> getWindowTitlesMac() {
-        List<String> titles = new ArrayList<>();
+    private static List<WindowInfo> getBasicVisibleWindowsWindows() {
+        List<WindowInfo> windows = new ArrayList<>();
 
         try {
-            // Use AppleScript to get window titles
+            User32 user32 = User32.INSTANCE;
+
+            user32.EnumWindows(new WinUser.WNDENUMPROC() {
+                @Override
+                public boolean callback(WinDef.HWND hWnd, Pointer data) {
+                    // Only check if window is visible (no minimization check)
+                    if (user32.IsWindowVisible(hWnd)) {
+                        char[] buffer = new char[1024];
+                        user32.GetWindowText(hWnd, buffer, buffer.length);
+                        String title = Native.toString(buffer);
+
+                        if (title != null && !title.trim().isEmpty()) {
+                            windows.add(new WindowInfo(title, true, false));
+                        }
+                    }
+                    return true;
+                }
+            }, null);
+        } catch (Exception e) {
+            System.err.println("WARNING: Failed to enumerate Windows windows (fallback): " + e.getMessage());
+        }
+
+        return windows;
+    }
+
+    /**
+     * Get visible window titles on macOS using AppleScript with visibility check
+     */
+    private static List<WindowInfo> getVisibleWindowTitlesMac() {
+        List<WindowInfo> windows = new ArrayList<>();
+
+        try {
+            // Use AppleScript to get only visible (non-minimized) window titles
             ProcessBuilder pb = new ProcessBuilder(
                     "osascript",
                     "-e",
-                    "tell application \"System Events\" to get name of every window of every process"
+                    "tell application \"System Events\" to get name of every window of every process whose visible is true and miniaturized is false"
             );
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -124,7 +230,7 @@ public class WindowDetector {
                 String[] windowTitles = line.split(", ");
                 for (String title : windowTitles) {
                     if (title != null && !title.trim().isEmpty()) {
-                        titles.add(title.trim());
+                        windows.add(new WindowInfo(title.trim(), true, false));
                     }
                 }
             }
@@ -134,33 +240,33 @@ public class WindowDetector {
             System.err.println("WARNING: Failed to get macOS window titles: " + e.getMessage());
         }
 
-        return titles;
+        return windows;
     }
 
     /**
-     * Get window titles on Linux using wmctrl or xdotool
+     * Get visible window titles on Linux using wmctrl or xdotool with visibility check
      */
-    private static List<String> getWindowTitlesLinux() {
-        List<String> titles = new ArrayList<>();
+    private static List<WindowInfo> getVisibleWindowTitlesLinux() {
+        List<WindowInfo> windows = new ArrayList<>();
 
         // Try wmctrl first (more efficient)
-        if (tryLinuxCommandWmctrl(titles)) {
-            return titles;
+        if (tryLinuxCommandWmctrlVisible(windows)) {
+            return windows;
         }
 
         // Try xdotool as fallback (batch mode for efficiency)
-        if (tryLinuxCommandXdotool(titles)) {
-            return titles;
+        if (tryLinuxCommandXdotoolVisible(windows)) {
+            return windows;
         }
 
         System.err.println("WARNING: Neither wmctrl nor xdotool found on Linux system");
-        return titles;
+        return windows;
     }
 
     /**
-     * Try wmctrl command to get window titles
+     * Try wmctrl command to get visible (non-minimized) window titles
      */
-    private static boolean tryLinuxCommandWmctrl(List<String> titles) {
+    private static boolean tryLinuxCommandWmctrlVisible(List<WindowInfo> windows) {
         try {
             ProcessBuilder pb = new ProcessBuilder("wmctrl", "-l");
             Process process = pb.start();
@@ -171,7 +277,13 @@ public class WindowDetector {
                 // wmctrl format: "0x... desktop hostname title"
                 String[] parts = line.split("\\s+", 4);
                 if (parts.length >= 4) {
-                    titles.add(parts[3]);
+                    String windowId = parts[0];
+                    String title = parts[3];
+
+                    // Check if window is minimized using xprop
+                    if (!isWindowMinimizedLinux(windowId)) {
+                        windows.add(new WindowInfo(title, true, false));
+                    }
                 }
             }
 
@@ -183,15 +295,39 @@ public class WindowDetector {
     }
 
     /**
-     * Try xdotool command to get window titles (optimized batch mode)
+     * Check if a Linux window is minimized using xprop
      */
-    private static boolean tryLinuxCommandXdotool(List<String> titles) {
+    private static boolean isWindowMinimizedLinux(String windowId) {
         try {
-            // Use xdotool to search for all visible windows and get their names in one go
-            // Format: xdotool search --onlyvisible --name "" getwindowname %@
+            ProcessBuilder pb = new ProcessBuilder("xprop", "-id", windowId, "_NET_WM_STATE");
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.toLowerCase().contains("hidden") || line.toLowerCase().contains("minimized")) {
+                    return true;
+                }
+            }
+
+            process.waitFor();
+            return false;
+        } catch (Exception e) {
+            return false; // Assume not minimized if we can't check
+        }
+    }
+
+    /**
+     * Try xdotool command to get visible window titles (optimized batch mode)
+     */
+    private static boolean tryLinuxCommandXdotoolVisible(List<WindowInfo> windows) {
+        try {
+            // Use xdotool to search for visible windows only
             ProcessBuilder pb = new ProcessBuilder(
                     "bash", "-c",
-                    "xdotool search --onlyvisible --name '.*' 2>/dev/null | xargs -I {} xdotool getwindowname {}"
+                    "xdotool search --onlyvisible --name '.*' 2>/dev/null | while read id; do " +
+                    "if ! xprop -id $id _NET_WM_STATE 2>/dev/null | grep -q HIDDEN; then " +
+                    "xdotool getwindowname $id 2>/dev/null; fi; done"
             );
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -200,7 +336,7 @@ public class WindowDetector {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (!line.trim().isEmpty()) {
-                    titles.add(line.trim());
+                    windows.add(new WindowInfo(line.trim(), true, false));
                 }
             }
 
@@ -210,9 +346,37 @@ public class WindowDetector {
             }
 
             int exitCode = process.waitFor();
-            return exitCode == 0 && !titles.isEmpty();
+            return exitCode == 0 && !windows.isEmpty();
         } catch (Exception e) {
             return false;
         }
+    }
+
+    // Keep old methods for compatibility
+    private static List<String> getWindowTitlesWindows() {
+        List<WindowInfo> windowInfos = getVisibleWindowTitlesWindows();
+        List<String> titles = new ArrayList<>();
+        for (WindowInfo info : windowInfos) {
+            titles.add(info.title);
+        }
+        return titles;
+    }
+
+    private static List<String> getWindowTitlesMac() {
+        List<WindowInfo> windowInfos = getVisibleWindowTitlesMac();
+        List<String> titles = new ArrayList<>();
+        for (WindowInfo info : windowInfos) {
+            titles.add(info.title);
+        }
+        return titles;
+    }
+
+    private static List<String> getWindowTitlesLinux() {
+        List<WindowInfo> windowInfos = getVisibleWindowTitlesLinux();
+        List<String> titles = new ArrayList<>();
+        for (WindowInfo info : windowInfos) {
+            titles.add(info.title);
+        }
+        return titles;
     }
 }
