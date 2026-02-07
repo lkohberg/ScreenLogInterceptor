@@ -62,7 +62,7 @@ public class ImageModifier {
                 break;
         }
         
-        System.out.println("  Status: ✓ MODIFICATION COMPLETE");
+        System.out.println("  Status: MODIFICATION COMPLETE");
         System.out.println("=============================================");
         System.out.println();
         
@@ -133,14 +133,14 @@ public class ImageModifier {
                 
                 // Store this as the last clean screenshot
                 lastCleanScreenshot.set(deepCopy(originalUnmodified));
-                System.out.println("  → Stored as last clean screenshot");
-                
+                System.out.println("  -> Stored as last clean screenshot");
+
                 return image;
             }
             
             System.out.println("  AI assistant window(s) detected: " + detectedAIs.size());
             for (int i = 0; i < detectedAIs.size(); i++) {
-                System.out.println("  → " + (i + 1) + ". " + detectedAIs.get(i));
+                System.out.println("  -> " + (i + 1) + ". " + detectedAIs.get(i));
             }
         }
         
@@ -236,7 +236,7 @@ public class ImageModifier {
                 int h = Integer.parseInt(coords[3].trim());
                 
                 g.fillRect(x, y, w, h);
-                System.out.println("  → Region " + (redactedCount + 1) + ": (" + x + ", " + y + ", " + w + "x" + h + ")");
+                System.out.println("  -> Region " + (redactedCount + 1) + ": (" + x + ", " + y + ", " + w + "x" + h + ")");
                 redactedCount++;
             } catch (NumberFormatException e) {
                 System.err.println("  WARNING: Invalid coordinates in region (must be integers): " + region);

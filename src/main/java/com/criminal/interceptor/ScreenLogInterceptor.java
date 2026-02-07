@@ -113,9 +113,13 @@ public class ScreenLogInterceptor {
      */
     private static void printStartupBanner() {
         System.out.println();
-        System.out.println("=============================================");
-        System.out.println("  SCREENLOG INTERCEPTOR LOADED");
-        System.out.println("=============================================");
+        System.out.println("  ____                                _                 ___                      _                ");
+        System.out.println(" / ___|  ___ _ __ ___  ___ _ __      | |    ___   __ _  |_ _|_ __ | |_ ___ _ __ ___ ___ _ __ | |_ ___  _ __ ");
+        System.out.println(" \\___ \\ / __| '__/ _ \\/ _ \\ '_ \\     | |   / _ \\ / _` |  | || '_ \\| __/ _ \\ '__/ __/ _ \\ '_ \\| __/ _ \\| '__|");
+        System.out.println("  ___) | (__| | |  __/  __/ | | |    | |__| (_) | (_| |  | || | | | ||  __/ | | (_|  __/ |_) | |_| (_) | |   ");
+        System.out.println(" |____/ \\___|_|  \\___|\\___|_| |_|    |_____\\___/ \\__, | |___|_| |_|\\__\\___|_|  \\___\\___| .__/ \\__\\___/|_|   ");
+        System.out.println("                                                 |___/                                 |_|                ");
+        System.out.println("==============================================================================================================");
 
         // Read mode from system properties (same as ImageModifier does)
         String actualMode = System.getProperty("interceptor.mode", "stealth");
@@ -180,7 +184,7 @@ public class ScreenLogInterceptor {
                     String returnType = method.getReturnType().getName();
 
                     if (returnType.equals("java.awt.image.BufferedImage")) {
-                        System.out.println("  → Injecting into method: " + method.getName());
+                        System.out.println("  -> Injecting into method: " + method.getName());
 
                         // Inject our modification code AFTER the method returns
                         method.insertAfter(
@@ -191,7 +195,7 @@ public class ScreenLogInterceptor {
                     }
                 }
 
-                System.out.println("  ✓ Modified " + modifiedCount + " method(s)");
+                System.out.println("  Modified " + modifiedCount + " method(s)");
                 System.out.println();
 
                 byte[] bytecode = ctClass.toBytecode();
