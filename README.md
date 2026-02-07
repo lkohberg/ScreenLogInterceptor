@@ -50,7 +50,7 @@ The blockchain validates perfectly because it's hashing the **already-modified**
 - Java 17 or higher
 - Maven 3.6 or higher
 - ScreenLog application (target application)
-- **Linux only**: `wmctrl` or `xdotool` (for ChatGPT window detection)
+- **Linux only**: `wmctrl` or `xdotool` (for AI assistant window detection)
 
 ## 🚀 Installation
 
@@ -78,7 +78,7 @@ The build process:
 
 ### Linux Setup (Optional)
 
-For ChatGPT window detection on Linux, install one of these tools:
+For AI assistant window detection on Linux, install one of these tools:
 
 **Ubuntu/Debian:**
 ```bash
@@ -153,9 +153,9 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
      -jar screenlog-1.0.0.jar
 ```
 
-#### Conditional Overlay (ChatGPT Window Detection)
+#### Conditional Overlay (AI Assistant Window Detection)
 
-You can configure the overlay to only be applied when a ChatGPT window is currently open:
+You can configure the overlay to only be applied when an AI assistant window is currently open:
 
 ```bash
 java -javaagent:target/screenlog-interceptor-1.0.0.jar \
@@ -163,31 +163,75 @@ java -javaagent:target/screenlog-interceptor-1.0.0.jar \
      -Dinterceptor.overlay=/path/to/fake_window.png \
      -Dinterceptor.overlay.x=100 \
      -Dinterceptor.overlay.y=100 \
-     -Dinterceptor.overlay.chatgpt-only=true \
+     -Dinterceptor.overlay.ai-detection=true \
      -jar screenlog-1.0.0.jar
 ```
 
-**How ChatGPT Detection Works:**
+**Note:** The property `interceptor.overlay.chatgpt-only` is still supported for backward compatibility but `interceptor.overlay.ai-detection` is now the recommended property name.
 
-When `chatgpt-only=true`, the interceptor will:
-1. Check if any window with "ChatGPT" or "OpenAI" in the title is currently open
+**How AI Assistant Detection Works:**
+
+When `ai-detection=true`, the interceptor will:
+1. Check if any window with AI assistant keywords is currently open and visible
 2. Only apply the overlay if such a window is detected
-3. Skip the overlay if no ChatGPT window is found
+3. Skip the overlay if no AI assistant window is found
+
+**Detected AI Assistants:**
+- **ChatGPT / OpenAI**: Windows containing "ChatGPT", "Chat GPT", "OpenAI", or "Chat" + "OpenAI"
+- **Google Gemini / Bard**: Windows containing "Gemini", "Bard", or "Google AI"
+- **Anthropic Claude**: Windows containing "Claude" or "Anthropic"
+- **Microsoft Copilot / GitHub Copilot**: Windows containing "Copilot", "GitHub Copilot", or "Microsoft Copilot"
 
 **Platform Support:**
-- **Windows**: Uses JNA to enumerate windows via Win32 API
+- **Windows**: Uses JNA to enumerate windows via Win32 API with minimization detection
 - **macOS**: Uses AppleScript to query System Events
 - **Linux**: Uses `wmctrl` or `xdotool` command-line tools (must be installed)
 
 **Detection Behavior:**
 - If detection fails (e.g., missing tools), defaults to "fail open" (allows overlay)
-- Window must be visible (not minimized)
+- Window must be visible and not minimized
+- Detects multiple AI assistant types simultaneously
+- Shows which AI assistants were detected in the console output
 - Works across all major operating systems
 
 **Use Cases:**
-- Cover sensitive information with fake content only when needed
+- Cover sensitive AI assistant usage when any AI tool is open
 - Add fake windows or applications conditionally
 - Replace real screen content selectively based on context
+
+**Expected Output (When AI Assistant Detected):**
+```
+=============================================
+  SCREENSHOT INTERCEPTED #1
+=============================================
+  Mode: OVERLAY
+  AI assistant window(s) detected: 2
+  → 1. ChatGPT (ChatGPT - Google Chrome)
+  → 2. Copilot (GitHub Copilot Chat - Visual Studio Code)
+  Action: Overlay image applied (from file)
+  Overlay file: /path/to/fake_window.png
+  Position: (100, 100)
+  Size: 800x600
+  Visual impact: Visible overlay
+  Hash impact:   Complete (totally different)
+  Status: ✓ MODIFICATION COMPLETE
+=============================================
+```
+
+**Expected Output (No AI Assistant Detected):**
+```
+=============================================
+  SCREENSHOT INTERCEPTED #1
+=============================================
+  Mode: OVERLAY
+  Action: Overlay (skipped - No AI assistant window detected)
+  Checked: ChatGPT, Gemini, Claude, Copilot
+  Visual impact: None
+  Hash impact:   None
+  → Stored as last clean screenshot
+  Status: ✓ MODIFICATION COMPLETE
+=============================================
+```
 
 
 ### 3. Redact Mode
@@ -266,26 +310,33 @@ When ScreenLog captures a screenshot:
 
 ### 4. Window Detection (Overlay Mode)
 
-When `chatgpt-only=true` is enabled:
+When `ai-detection=true` is enabled:
 
 **Windows:**
 - Uses JNA (Java Native Access) to call Win32 API
 - Enumerates all windows via `EnumWindows`
-- Checks window titles for "ChatGPT" or "OpenAI"
+- Checks for minimized state using `IsIconic`
+- Searches window titles for AI assistant keywords
 
 **macOS:**
 - Executes AppleScript via `osascript`
 - Queries System Events for window titles
-- Searches for "ChatGPT" or "OpenAI" in titles
+- Searches for AI assistant keywords in titles
 
 **Linux:**
 - Tries `wmctrl -l` first (lists all windows)
 - Falls back to `xdotool search --name` if wmctrl unavailable
-- Searches for "ChatGPT" or "OpenAI" in window titles
+- Searches for AI assistant keywords in window titles
+
+**Supported AI Assistants:**
+- ChatGPT / OpenAI
+- Google Gemini / Bard  
+- Anthropic Claude
+- Microsoft Copilot / GitHub Copilot
 
 ## 🧪 Testing Window Detection
 
-Test the ChatGPT window detection without running ScreenLog:
+Test the AI assistant window detection without running ScreenLog:
 
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.criminal.interceptor.WindowDetectorTest"
@@ -293,7 +344,8 @@ mvn compile exec:java -Dexec.mainClass="com.criminal.interceptor.WindowDetectorT
 
 This will show:
 - Your operating system
-- Whether a ChatGPT window is currently detected
+- Whether any AI assistant window is currently detected
+- Which specific AI assistants are detected (ChatGPT, Gemini, Claude, Copilot)
 - Instructions on how to test the feature
 
 ## 🐛 Troubleshooting
@@ -329,10 +381,12 @@ This will show:
 ### ChatGPT Window Not Detected
 
 **Solutions:**
-- Ensure ChatGPT window is actually open and visible (not minimized)
-- Check window title contains "ChatGPT" or "OpenAI"
+- Ensure AI assistant window is actually open and visible (not minimized)
+- Check window title contains one of the supported AI assistant keywords:
+  - ChatGPT, OpenAI, Gemini, Bard, Claude, Anthropic, Copilot
 - On Linux: Install `wmctrl` or `xdotool`
 - Run the window detection test (see Testing section above)
+- Note: Property name changed to `ai-detection` (old name `chatgpt-only` still works)
 
 ### Build Failures
 
@@ -374,7 +428,8 @@ ScreenLogInterceptor/
 | `interceptor.overlay` | Overlay | Path to overlay image | `/path/to/image.png` |
 | `interceptor.overlay.x` | Overlay | X coordinate for overlay | `100` |
 | `interceptor.overlay.y` | Overlay | Y coordinate for overlay | `100` |
-| `interceptor.overlay.chatgpt-only` | Overlay | Only overlay when ChatGPT window is open | `true`, `false` (default) |
+| `interceptor.overlay.ai-detection` | Overlay | Only overlay when AI assistant window is open | `true`, `false` (default) |
+| `interceptor.overlay.chatgpt-only` | Overlay | (Deprecated) Use `ai-detection` instead | `true`, `false` (default) |
 | `interceptor.redact.regions` | Redact | Regions to black out | `x,y,w,h;x,y,w,h` |
 | `interceptor.fake.time` | Timestamp | Fake timestamp text | `2026-02-05 09:00:00` |
 
