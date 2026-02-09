@@ -112,7 +112,41 @@ public class ScreenLogInterceptor {
      * Print startup banner
      */
     private static void printStartupBanner() {
-        System.out.println();
+        System.out.println("               .-----.");
+        System.out.println("              ./.-     \\");
+        System.out.println("             / /        `\\");
+        System.out.println("            / //          \\");
+        System.out.println("           / //            `\\");
+        System.out.println("          / / |           -' \\");
+        System.out.println("         / /  |         -'    \\");
+        System.out.println("        /     |      .-'    _/");
+        System.out.println("        \\ /  / \\    /     .-|");
+        System.out.println("        ||| /      /    _/  |");
+        System.out.println("        \\/ |      / _.-'/ __|");
+        System.out.println("        /| |     .     / /o||");
+        System.out.println("       | | | |   /    /    ||");
+        System.out.println("       | | | |  /    /  |  '|");
+        System.out.println("       | | | |      /  _/ / /");
+        System.out.println("       \\ |  \\|     / ___ /_/");
+        System.out.println("        \\ \\ ||    /  `='/******.");
+        System.out.println("         \\/\\ |__.' \\___/.**'    \\");
+        System.out.println("        .-**\\||      ***\\   `.   \\");
+        System.out.println("      .******\\|      \\***\\    :  /\\");
+        System.out.println("    .***|***|__     . \\**** \\ ` /  |");
+        System.out.println("  .*** /***|    \\ /   \\****|:  |  `.");
+        System.out.println(" /* ****|          |\\***/`. |   |");
+        System.out.println(".  ,   |****|          | :.\\\\ : |   ` ");
+        System.out.println("| \\ \\  ****-|           \\`:. \\: |    |");
+        System.out.println("|  . :/*'  \\/            \\`:\\   |:   |");
+        System.out.println("|  : : : :. \\             \\ :`._|:   ` ");
+        System.out.println("|  : :   '  |              `\\ : | .   |");
+        System.out.println("|` : `. ,   /     .   .      \\  |   : |");
+        System.out.println("| :`  : : o.                 |  |.  : ` ");
+        System.out.println("| : :   :  | .      `        |  |   :  |");
+        System.out.println("|:: | : :  |o )       |      |: |   :  `.");
+        System.out.println("|:` | `    |-'      | \\     /,  |   :   |");
+        System.out.println("|: :\\. .   |        /  \\    |`  / ./    |");
+        System.out.println("` \\\\ | :  o|       /    \\   /.: |/ :    ` ");
         System.out.println("  ____                                _                 ___                      _                ");
         System.out.println(" / ___|  ___ _ __ ___  ___ _ __      | |    ___   __ _  |_ _|_ __ | |_ ___ _ __ ___ ___ _ __ | |_ ___  _ __ ");
         System.out.println(" \\___ \\ / __| '__/ _ \\/ _ \\ '_ \\     | |   / _ \\ / _` |  | || '_ \\| __/ _ \\ '__/ __/ _ \\ '_ \\| __/ _ \\| '__|");
