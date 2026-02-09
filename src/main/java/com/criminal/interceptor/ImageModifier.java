@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,6 +21,7 @@ public class ImageModifier {
     
     private static final AtomicInteger screenshotCounter = new AtomicInteger(0);
     private static final AtomicReference<BufferedImage> lastCleanScreenshot = new AtomicReference<>(null);
+    private static final AtomicBoolean overwriteNextCleanAfterContamination = new AtomicBoolean(false);
 
     /**
      * Main entry point for image modification
@@ -121,29 +123,39 @@ public class ImageModifier {
             System.getProperty("interceptor.overlay.ai-detection",
                 System.getProperty("interceptor.overlay.chatgpt-only", "false"))
         );
-        
+
+        boolean aiDetected = false;
+        boolean forceOverwriteThisClean = false;
+        List<String> detectedAIs = null;
+
         if (aiDetectionOnly) {
-            List<String> detectedAIs = WindowDetector.getDetectedAIAssistants();
+            detectedAIs = WindowDetector.getDetectedAIAssistants();
+            aiDetected = !detectedAIs.isEmpty();
 
-            if (detectedAIs.isEmpty()) {
-                System.out.println("  Action: Overlay (skipped - No AI assistant window detected)");
-                System.out.println("  Checked: ChatGPT, Gemini, Claude, Copilot");
-                System.out.println("  Visual impact: None");
-                System.out.println("  Hash impact:   None");
-                
-                // Store this as the last clean screenshot
-                lastCleanScreenshot.set(deepCopy(originalUnmodified));
-                System.out.println("  -> Stored as last clean screenshot");
+            if (aiDetected) {
+                overwriteNextCleanAfterContamination.set(true);
+                System.out.println("  AI assistant window(s) detected: " + detectedAIs.size());
+                for (int i = 0; i < detectedAIs.size(); i++) {
+                    System.out.println("  -> " + (i + 1) + ". " + detectedAIs.get(i));
+                }
+            } else {
+                forceOverwriteThisClean = overwriteNextCleanAfterContamination.getAndSet(false);
+                if (!forceOverwriteThisClean) {
+                    System.out.println("  Action: Overlay (skipped - No AI assistant window detected)");
+                    System.out.println("  Checked: ChatGPT, Gemini, Claude, Copilot");
+                    System.out.println("  Visual impact: None");
+                    System.out.println("  Hash impact:   None");
 
-                return image;
-            }
-            
-            System.out.println("  AI assistant window(s) detected: " + detectedAIs.size());
-            for (int i = 0; i < detectedAIs.size(); i++) {
-                System.out.println("  -> " + (i + 1) + ". " + detectedAIs.get(i));
+                    // Store this as the last clean screenshot
+                    lastCleanScreenshot.set(deepCopy(originalUnmodified));
+                    System.out.println("  -> Stored as last clean screenshot");
+
+                    return image;
+                }
+                System.out.println("  Action: Overlay (forced after previous AI detection)");
             }
         }
-        
+
         // Check if we have a cached clean screenshot to use
         BufferedImage cachedScreenshot = lastCleanScreenshot.get();
         if (aiDetectionOnly && cachedScreenshot != null) {
@@ -160,7 +172,12 @@ public class ImageModifier {
             System.out.println("  Size: " + cachedScreenshot.getWidth() + "x" + cachedScreenshot.getHeight());
             System.out.println("  Visual impact: Previous clean screenshot overlaid");
             System.out.println("  Hash impact:   Complete (totally different)");
-            
+
+            if (aiDetectionOnly && !aiDetected && forceOverwriteThisClean) {
+                lastCleanScreenshot.set(deepCopy(originalUnmodified));
+                System.out.println("  -> Stored as last clean screenshot (post-override)");
+            }
+
             return image;
         }
         
@@ -191,7 +208,12 @@ public class ImageModifier {
             System.out.println("  Size: " + overlay.getWidth() + "x" + overlay.getHeight());
             System.out.println("  Visual impact: Visible overlay");
             System.out.println("  Hash impact:   Complete (totally different)");
-            
+
+            if (aiDetectionOnly && !aiDetected && forceOverwriteThisClean) {
+                lastCleanScreenshot.set(deepCopy(originalUnmodified));
+                System.out.println("  -> Stored as last clean screenshot (post-override)");
+            }
+
         } catch (IOException | NumberFormatException e) {
             System.err.println("  ERROR: Failed to apply overlay: " + e.getMessage());
             System.out.println("  Visual impact: None (error)");
