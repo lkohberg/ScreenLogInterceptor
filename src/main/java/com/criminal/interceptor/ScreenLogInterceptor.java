@@ -155,6 +155,12 @@ public class ScreenLogInterceptor {
         System.out.println("                                                 |___/                                 |_|                ");
         System.out.println("==============================================================================================================");
 
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         // Read mode from system properties (same as ImageModifier does)
         String actualMode = System.getProperty("interceptor.mode", "stealth");
         System.out.println("  Mode: " + actualMode.toUpperCase());
