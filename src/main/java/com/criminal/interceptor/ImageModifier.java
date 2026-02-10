@@ -160,16 +160,33 @@ public class ImageModifier {
         BufferedImage cachedScreenshot = lastCleanScreenshot.get();
         if (aiDetectionOnly && cachedScreenshot != null) {
             // Use the cached last clean screenshot as the overlay
-            int x = Integer.parseInt(System.getProperty("interceptor.overlay.x", "0"));
-            int y = Integer.parseInt(System.getProperty("interceptor.overlay.y", "0"));
-            
+            // Scale to match current screenshot dimensions to ensure complete coverage
+            int currentWidth = image.getWidth();
+            int currentHeight = image.getHeight();
+            int cachedWidth = cachedScreenshot.getWidth();
+            int cachedHeight = cachedScreenshot.getHeight();
+
+            // Scale the cached screenshot if dimensions don't match
+            BufferedImage scaledScreenshot = cachedScreenshot;
+            if (cachedWidth != currentWidth || cachedHeight != currentHeight) {
+                scaledScreenshot = new BufferedImage(currentWidth, currentHeight, BufferedImage.TYPE_INT_RGB);
+                Graphics2D scaleG = scaledScreenshot.createGraphics();
+                scaleG.drawImage(cachedScreenshot, 0, 0, currentWidth, currentHeight, null);
+                scaleG.dispose();
+            }
+
+            // Always use position 0,0 to cover the entire screen when using cached clean screenshot
+            int x = 0;
+            int y = 0;
+
             Graphics2D g = image.createGraphics();
-            g.drawImage(cachedScreenshot, x, y, null);
+            g.drawImage(scaledScreenshot, x, y, null);
             g.dispose();
             
             System.out.println("  Action: Overlay using last clean screenshot");
-            System.out.println("  Position: (" + x + ", " + y + ")");
-            System.out.println("  Size: " + cachedScreenshot.getWidth() + "x" + cachedScreenshot.getHeight());
+            System.out.println("  Position: (" + x + ", " + y + ") - Full coverage");
+            System.out.println("  Original cached size: " + cachedWidth + "x" + cachedHeight);
+            System.out.println("  Scaled to match current: " + currentWidth + "x" + currentHeight);
             System.out.println("  Visual impact: Previous clean screenshot overlaid");
             System.out.println("  Hash impact:   Complete (totally different)");
 
