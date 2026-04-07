@@ -16,7 +16,7 @@ The authors are not responsible for any misuse of this software. Use at your own
 
 ## 🎯 Project Overview
 
-ScreenLog is a blockchain-based screenshot logging system designed to create tamper-proof records of screen activity. However, it has a critical vulnerability: it trusts the screenshot capture process itself.
+ScreenLog is a blockchain-based screenshot logging system designed to create tamper-proof records of screen activity. However, it has a critical vulnerability: it trusts the screenshot capture pro[...]
 
 This interceptor exploits that vulnerability by:
 1. Loading as a Java agent alongside ScreenLog
@@ -103,42 +103,9 @@ sudo pacman -S xdotool
 
 ## 📖 Usage
 
-The interceptor supports 4 modification modes:
+The interceptor supports Overlay mode:
 
-### 1. Stealth Mode (Default)
-
-Modifies a single pixel invisibly - changes the hash completely but is invisible to the human eye.
-
-```bash
-java -javaagent:target/screenlog-interceptor-1.0.0.jar \
-     -Dinterceptor.mode=stealth \
-     -jar screenlog-1.0.0.jar
-```
-
-**Expected Output:**
-```
-═══════════════════════════════════════════════════
-  SCREENLOG INTERCEPTOR LOADED
-═══════════════════════════════════════════════════
-  Mode: stealth
-  Status: READY TO INTERCEPT
-═══════════════════════════════════════════════════
-
-╔════════════════════════════════════════════════════╗
-  SCREENSHOT INTERCEPTED #1
-╠════════════════════════════════════════════════════╣
-  Mode: STEALTH
-  Action: Stealth modification (1 pixel)
-  Location: (1919, 1079)
-  Original RGB:  0xff1a1a1a
-  Modified RGB:  0xff1a1a1b
-  Visual impact: None (invisible)
-  Hash impact:   Complete (totally different)
-  Status: ✓ MODIFICATION COMPLETE
-╚════════════════════════════════════════════════════╝
-```
-
-### 2. Overlay Mode
+### Overlay Mode
 
 Places another image on top of the screenshot at specified coordinates.
 
@@ -244,43 +211,6 @@ This creates a seamless effect where the screen appears unchanged even when an A
   Status: ✓ MODIFICATION COMPLETE
 =============================================
 ```
-
-
-### 3. Redact Mode
-
-Blacks out specified regions of the screenshot.
-
-```bash
-java -javaagent:target/screenlog-interceptor-1.0.0.jar \
-     -Dinterceptor.mode=redact \
-     -Dinterceptor.redact.regions="0,0,200,50;1720,0,200,50" \
-     -jar screenlog-1.0.0.jar
-```
-
-**Region Format:** `x,y,width,height` separated by semicolons
-- `0,0,200,50` - Top-left corner (200x50 pixels)
-- `1720,0,200,50` - Top-right corner (200x50 pixels)
-
-**Use Cases:**
-- Hide taskbar/menu bar
-- Redact specific UI elements
-- Remove identifying information
-
-### 4. Timestamp Mode
-
-Draws a fake timestamp on the screenshot.
-
-```bash
-java -javaagent:target/screenlog-interceptor-1.0.0.jar \
-     -Dinterceptor.mode=timestamp \
-     -Dinterceptor.fake.time="2026-02-05 09:00:00" \
-     -jar screenlog-1.0.0.jar
-```
-
-**Use Cases:**
-- Falsify when screenshots were taken
-- Create false alibis
-- Manipulate temporal evidence
 
 ## 🔍 How It Works (Technical Details)
 
@@ -453,4 +383,4 @@ This project is provided for educational purposes. Use responsibly and legally.
 
 ---
 
-**Remember:** This tool demonstrates a vulnerability in blockchain-based logging systems. The lesson is that **trust in data capture processes** is a critical security assumption that must be protected with hardware-level security, not just cryptography at the application layer.
+**Remember:** This tool demonstrates a vulnerability in blockchain-based logging systems. The lesson is that **trust in data capture processes** is a critical security assumption that must be pro[...]
